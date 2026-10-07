@@ -1,0 +1,23 @@
+node_modules/
+dist/
+coverage/
+
+# Configurazione locale con URL/credenziali reali: mai versionare
+.env
+.env.local
+.env.*.local
+
+# Il progetto Android (android/) È versionato: contiene configurazione nativa
+# (manifest, versione, regole di backup). Build e asset generati sono esclusi
+# da android/.gitignore.
+
+# Impostazioni personali di Android Studio (device scelto, layout): le
+# rigenera l'IDE all'apertura del progetto.
+android/.idea/
+
+# Materiale sensibile
+*.key
+*.pem
+*.p12
+*.jks
+*.keystore

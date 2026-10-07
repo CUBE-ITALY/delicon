@@ -1,0 +1,13 @@
+# Fine riga: nel repository sempre LF, in locale secondo il sistema.
+* text=auto
+
+# Script con fine riga fisso, qualunque sia il sistema: gradlew deve girare
+# anche in Git Bash, su Linux e in CI; gradlew.bat solo su Windows.
+android/gradlew text eol=lf
+*.bat           text eol=crlf
+
+# Binari
+*.jar   binary
+*.png   binary
+*.wav   binary
+*.woff2 binary

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <!-- Logo Delicon: cubo Cube Italy con la spunta gialla (stesso disegno di src/ui/BrandMark.vue). -->
+  <rect width="48" height="48" fill="#3a3d41"/>
+  <path d="M10 25L22 31.9V44.9L10 38z" fill="#1c1e1f"/>
+  <path d="M22 31.9L34 25V38L22 44.9z" fill="#5c5f62"/>
+  <path d="M10 25L22 18.1L34 25L22 31.9z" fill="#0c0d0e"/>
+  <path d="M9 21.4L22 13.9L35 21.4L22 28.9z" fill="#9ae949"/>
+  <path d="M16.5 21L21.5 26L37 10.5" fill="none" stroke="#151615" stroke-width="4.6" stroke-linecap="square"/>
+  <path d="M16.5 21L21.5 26L37 10.5" fill="none" stroke="#f5b400" stroke-width="2.6" stroke-linecap="square"/>
+</svg>

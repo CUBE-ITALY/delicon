@@ -1,0 +1,431 @@
+/*
+ * Stili di base e classi condivise: pagina, blocchi a tutta larghezza,
+ * celle con etichetta, pulsanti, campi, fascia di esito.
+ * Spigoli vivi e nessuna ombra: i blocchi si separano con filetti.
+ */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    font-size: 100%;
+}
+
+html, body {
+    margin: 0;
+    height: 100%;
+}
+
+body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: var(--fs-md);
+    line-height: 1.35;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+}
+
+#app {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+h1, h2, h3, p {
+    margin: 0;
+}
+
+b, strong {
+    font-weight: 600;
+}
+
+button, input {
+    font: inherit;
+    color: inherit;
+}
+
+:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+}
+
+/* Codici e numeri: stretto, cifre a larghezza fissa */
+.mono {
+    font-family: var(--font-cond);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+}
+
+.num {
+    font-variant-numeric: tabular-nums;
+}
+
+.muted {
+    color: var(--ink-2);
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* --- Pagina --- */
+
+.page {
+    flex: 1;
+    width: 100%;
+    max-width: var(--page-max);
+    margin: 0 auto;
+    padding: var(--gutter) 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* Il contenuto ha il margine laterale; i blocchi .bleed vanno da bordo a bordo. */
+.page > * {
+    margin-inline: var(--gutter);
+}
+
+.page > .bleed {
+    margin-inline: 0;
+}
+
+/* Etichetta di sezione, con un eventuale conteggio a destra */
+.section-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    font-family: var(--font-cond);
+    font-weight: 700;
+    font-size: var(--fs-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+}
+
+.hint {
+    font-size: var(--fs-sm);
+    color: var(--ink-2);
+    margin-top: -6px;
+}
+
+/* --- Blocchi --- */
+
+/* Foglio a tutta larghezza, aperto e chiuso da un filetto forte */
+.sheet {
+    background: var(--sheet);
+    border-top: var(--rule) solid var(--ink);
+    border-bottom: var(--rule) solid var(--ink);
+}
+
+/* Righe di un elenco dentro un foglio */
+.rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.rows > li + li {
+    border-top: 1px solid var(--hair);
+}
+
+/* Cartiglio: celle con etichetta piccola in alto, come sul DDT */
+.cells {
+    display: grid;
+}
+
+.cells + .cells {
+    border-top: 1px solid var(--hair);
+}
+
+.cell {
+    min-width: 0;
+    padding: 7px var(--gutter) 10px;
+}
+
+.cell + .cell {
+    border-left: 1px solid var(--hair);
+}
+
+.cell-label,
+.field-label {
+    display: block;
+    font-family: var(--font-cond);
+    font-weight: 600;
+    font-size: 0.6875rem;   /* 11 */
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+}
+
+.cell-value {
+    font-family: var(--font-cond);
+    font-weight: 700;
+    font-size: 1.875rem;    /* 30 */
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+}
+
+.cell-value--sm {
+    font-size: 1.375rem;    /* 22 */
+}
+
+.cell-value small {
+    font-size: 0.62em;
+    color: var(--ink-2);
+}
+
+/* Conteggio a destra di una riga: "4/4" e unità sotto */
+.count {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1;
+}
+
+.count strong {
+    font-family: var(--font-cond);
+    font-weight: 700;
+    font-size: 1.625rem;    /* 26 */
+    font-variant-numeric: tabular-nums;
+}
+
+.count small {
+    margin-top: 2px;
+    font-family: var(--font-cond);
+    font-weight: 600;
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+}
+
+/* --- Pulsanti: solo testo, maiuscolo stretto --- */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: var(--tap);
+    padding: 0 16px;
+    border: 2px solid var(--ink);
+    border-radius: 0;
+    background: var(--sheet);
+    color: var(--ink);
+    font-family: var(--font-cond);
+    font-weight: 700;
+    font-size: var(--fs-md);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    cursor: pointer;
+    user-select: none;
+    touch-action: manipulation;
+    white-space: nowrap;
+}
+
+.btn:active:not(:disabled) {
+    background: var(--sheet-2);
+}
+
+.btn:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+}
+
+/* Azione successiva: l'unico giallo della schermata */
+.btn-primary {
+    background: var(--signal);
+    border-color: var(--signal-edge);
+    color: var(--on-signal);
+}
+
+.btn-primary:active:not(:disabled) {
+    background: var(--signal-pressed);
+}
+
+.btn-danger {
+    color: var(--ko);
+    border-color: var(--ko);
+}
+
+.btn-quiet {
+    border-color: transparent;
+    background: transparent;
+}
+
+.btn-quiet:active:not(:disabled) {
+    background: var(--sheet-2);
+}
+
+.btn-lg {
+    min-height: var(--tap-lg);
+    font-size: 1.1875rem;   /* 19 */
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.btn-icon {
+    width: var(--tap);
+    padding: 0;
+}
+
+/* Link d'azione secondaria (testo sottolineato) */
+.link {
+    align-self: flex-start;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font-size: var(--fs-sm);
+    text-align: left;
+    text-decoration: underline;
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.link:disabled {
+    opacity: 0.38;
+}
+
+/* --- Campi: etichetta dentro la cella, come su un modulo --- */
+
+.field {
+    display: block;
+    border: 2px solid var(--ink);
+    background: var(--sheet);
+    padding: 5px 12px 4px;
+    cursor: text;
+}
+
+.field:focus-within {
+    box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.field.is-invalid {
+    border-color: var(--ko);
+}
+
+.field.is-disabled {
+    background: var(--sheet-2);
+}
+
+/* Campo con pulsante a destra (es. tastiera a schermo) */
+.field__row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.field__row .input {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Pulsante tastiera: attenuato finché non serve, pieno quando è attivo */
+.field__key {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 40px;
+    margin: -2px -8px -2px 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--dim);
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.field__key:active,
+.field__key.is-on {
+    color: var(--ink);
+    background: var(--sheet-2);
+}
+
+.input {
+    display: block;
+    width: 100%;
+    min-height: 36px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-size: var(--fs-lg);
+    outline: none;
+}
+
+.input.mono {
+    font-size: 1.625rem;    /* 26 */
+}
+
+.input::placeholder {
+    color: var(--dim);
+    opacity: 1;
+    font-family: var(--font);
+    font-weight: 400;
+    font-size: var(--fs-md);
+    letter-spacing: 0;
+}
+
+.input:disabled {
+    color: var(--ink-2);
+}
+
+/* --- Esito di un'azione: fascia a colore pieno --- */
+
+.band {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 14px;
+    font-weight: 600;
+    font-size: var(--fs-md);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.band--success { background: var(--ok);    color: var(--on-state); }
+.band--danger  { background: var(--ko);    color: var(--on-state); }
+.band--warning { background: var(--warn);  color: var(--on-warn); }
+.band--neutral { background: var(--ink);   color: var(--sheet); }
+
+/* Colori di testo per esito */
+.text-success { color: var(--ok); }
+.text-danger  { color: var(--ko); }
+.text-warning { color: var(--warn-ink); }
+.text-neutral { color: var(--ink-2); }
+
+/* --- Spinner: quadrato che ruota --- */
+
+.spinner {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    border: 3px solid currentColor;
+    border-right-color: transparent;
+    animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .spinner { animation-duration: 2.5s; }
+}

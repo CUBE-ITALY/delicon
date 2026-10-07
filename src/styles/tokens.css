@@ -1,0 +1,124 @@
+/*
+ * Design token di Delicon, stile "Spunta": il linguaggio del foglio di spunta
+ * e del DDT (righe, caselle, etichetta piccola in ogni cella) con i colori RAL
+ * della serie traffico, nati per essere letti all'aperto.
+ *
+ * Regole del colore:
+ *   - il giallo (--signal) indica solo l'azione successiva, mai uno stato;
+ *   - verde, rosso e arancio sono esiti, sempre insieme a forma e testo;
+ *   - tutto il resto è inchiostro su carta.
+ * Valori sRGB approssimati ai RAL e regolati per il contrasto WCAG AA.
+ *
+ * Tema: chiaro di default, scuro se il sistema lo chiede, forzabile con
+ * <html data-theme="light|dark">. L'intestazione è scura in entrambi i temi.
+ */
+
+:root {
+    color-scheme: light;
+
+    --paper:    #dcddd7;   /* fondo pagina: grigio luce (RAL 7035), schiarito */
+    --sheet:    #ffffff;   /* fondo dei dati */
+    --sheet-2:  #eeefea;   /* pressione, selezione */
+    --ink:      #151615;   /* nero traffico (RAL 9017) */
+    --ink-2:    #4a4e47;   /* testo secondario */
+    --dim:      #8e9289;   /* zeri iniziali dei codici */
+    --hair:     #c9cbc3;   /* filetti tra righe e celle */
+    --empty:    #dedfd9;   /* tacca vuota */
+
+    --head:      #151615;  /* intestazione */
+    --on-head:   #f2f3ee;
+    --on-head-2: #9a9e95;
+
+    --signal:         #f5b400;  /* giallo traffico (RAL 1023): azione */
+    --signal-pressed: #d99e00;
+    --on-signal:      #151615;
+    --signal-edge:    #151615;
+
+    --ok:       #007a4d;   /* verde traffico (RAL 6024) */
+    --ko:       #c1121c;   /* rosso traffico (RAL 3020) */
+    --warn:     #e0581c;   /* arancio traffico (RAL 2009): solo come fondo */
+    --warn-ink: #a33a06;   /* arancio per il testo */
+    --on-state: #ffffff;   /* testo su verde e rosso pieni */
+    --on-warn:  #151615;
+
+    --focus: #151615;
+    --scrim: rgba(21, 22, 21, 0.62);
+
+    --font:      "Barlow", Roboto, "Segoe UI", system-ui, sans-serif;
+    --font-cond: "Barlow Semi Condensed", "Roboto Condensed", "Arial Narrow", sans-serif;
+
+    --fs-xs: 0.8125rem;  /* 13 */
+    --fs-sm: 0.9375rem;  /* 15 */
+    --fs-md: 1.0625rem;  /* 17 */
+    --fs-lg: 1.25rem;    /* 20 */
+    --fs-xl: 1.5rem;     /* 24 */
+
+    --tap:      3.25rem; /* 52px: altezza minima dei controlli (guanti) */
+    --tap-lg:   3.625rem;/* 58px: azioni primarie */
+    --rule:     2px;     /* filetto forte: inizio e fine di un blocco */
+    --gutter:   14px;
+    --head-h:   66px;    /* altezza dell'intestazione, senza area di sistema */
+    --page-max: 720px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        color-scheme: dark;
+
+        --paper:    #0b0c0b;
+        --sheet:    #171917;
+        --sheet-2:  #20231f;
+        --ink:      #ecede7;
+        --ink-2:    #a3a79f;
+        --dim:      #6b7068;
+        --hair:     #2f332e;
+        --empty:    #2a2d29;
+
+        --head:      #000000;
+        --on-head:   #ecede7;
+        --on-head-2: #7f847b;
+
+        --signal-pressed: #ffc93d;
+        --signal-edge:    #f5b400;
+
+        --ok:       #34c27a;
+        --ko:       #ff5b50;
+        --warn:     #ff8a3d;
+        --warn-ink: #ff9f5e;
+        --on-state: #0b0c0b;
+        --on-warn:  #0b0c0b;
+
+        --focus: #f5b400;
+        --scrim: rgba(0, 0, 0, 0.7);
+    }
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+
+    --paper:    #0b0c0b;
+    --sheet:    #171917;
+    --sheet-2:  #20231f;
+    --ink:      #ecede7;
+    --ink-2:    #a3a79f;
+    --dim:      #6b7068;
+    --hair:     #2f332e;
+    --empty:    #2a2d29;
+
+    --head:      #000000;
+    --on-head:   #ecede7;
+    --on-head-2: #7f847b;
+
+    --signal-pressed: #ffc93d;
+    --signal-edge:    #f5b400;
+
+    --ok:       #34c27a;
+    --ko:       #ff5b50;
+    --warn:     #ff8a3d;
+    --warn-ink: #ff9f5e;
+    --on-state: #0b0c0b;
+    --on-warn:  #0b0c0b;
+
+    --focus: #f5b400;
+    --scrim: rgba(0, 0, 0, 0.7);
+}

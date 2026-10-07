@@ -1,0 +1,48 @@
+{
+  "shipmentId": "0000000873",
+  "deliveries": [
+    {
+      "deliveryId": "0001",
+      "sequence": 1,
+      "deliveryNumber": "0090012345",
+      "deliveryNoteNumber": "603967",
+      "consignee": {
+        "name": "Mobili Rossi S.r.l.",
+        "street": "Via Garibaldi",
+        "houseNumber": "14",
+        "postalCode": "20121",
+        "city": "Milano",
+        "region": "MI",
+        "country": "IT"
+      },
+      "expectedPackageCount": 4,
+      "packages": [
+        { "packageId": "000000013178", "lineId": "000010", "articleCode": "ART-735-BI", "description": "Armadio 2 ante – fianchi e schienale" },
+        { "packageId": "000000013179", "lineId": "000020", "articleCode": "ART-401-BI", "description": "Cassettiera 3 cassetti" },
+        { "packageId": "000000013180", "lineId": "000030", "articleCode": "ART-570-BI", "description": "Ante alte armadio" },
+        { "packageId": "000000013181", "lineId": "000040", "articleCode": "ART-200-NO", "description": "Piano tavolo 200 cm noce" }
+      ]
+    },
+    {
+      "deliveryId": "0002",
+      "sequence": 2,
+      "deliveryNumber": "0090012346",
+      "deliveryNoteNumber": "603968",
+      "consignee": {
+        "name": "Laura Bianchi",
+        "street": "Via Roma",
+        "houseNumber": "12",
+        "postalCode": "65121",
+        "city": "Pescara",
+        "region": "PE",
+        "country": "IT"
+      },
+      "expectedPackageCount": 3,
+      "packages": [
+        { "packageId": "000000013190", "lineId": "000010", "articleCode": "ART-780-NO", "description": "Comò 5 cassetti noce" },
+        { "packageId": "000000013191", "lineId": "000020", "articleCode": "ART-798-NE", "description": "Paracolpi 80 cm nero" },
+        { "packageId": "000000013192", "lineId": "000030", "articleCode": "KIT-FERR",   "description": "Kit ferramenta di montaggio" }
+      ]
+    }
+  ]
+}

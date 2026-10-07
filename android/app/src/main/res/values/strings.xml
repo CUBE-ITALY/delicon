@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Delicon</string>
+    <string name="title_activity_main">Delicon</string>
+    <string name="package_name">it.cube.delicon</string>
+    <string name="custom_url_scheme">it.cube.delicon</string>
+</resources>

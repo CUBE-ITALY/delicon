@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fondo del logo Delicon (src/ui/BrandMark.vue): antracite neutro, abbastanza
+         chiaro da staccare la faccia sinistra del cubo. -->
+    <color name="ic_launcher_background">#3A3D41</color>
+</resources>

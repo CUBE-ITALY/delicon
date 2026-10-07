@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Splash: nero, come l'intestazione dell'app (variabile head in src/styles/tokens.css).
+         Il logo sta sul suo cerchio antracite (ic_launcher_background): la faccia
+         antracite del cubo, direttamente sul nero, non si vedrebbe. -->
+    <color name="splash_background">#151615</color>
+</resources>

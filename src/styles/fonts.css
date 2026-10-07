@@ -1,0 +1,46 @@
+/*
+ * Caratteri di Delicon, inclusi nel pacchetto (l'app deve funzionare offline):
+ * Barlow per il testo, Barlow Semi Condensed per titoli, etichette, numeri e
+ * codici. Licenza SIL OFL 1.1 (pacchetti @fontsource). Solo il sottoinsieme
+ * latino in woff2: copre l'italiano e la punteggiatura (– · …).
+ */
+
+@font-face {
+    font-family: "Barlow";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("@fontsource/barlow/files/barlow-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Barlow";
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("@fontsource/barlow/files/barlow-latin-600-normal.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Barlow Semi Condensed";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("@fontsource/barlow-semi-condensed/files/barlow-semi-condensed-latin-500-normal.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Barlow Semi Condensed";
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("@fontsource/barlow-semi-condensed/files/barlow-semi-condensed-latin-600-normal.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Barlow Semi Condensed";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("@fontsource/barlow-semi-condensed/files/barlow-semi-condensed-latin-700-normal.woff2") format("woff2");
+}
