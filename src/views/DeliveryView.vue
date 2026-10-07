@@ -17,10 +17,12 @@ import Tally from "../ui/Tally.vue";
 import SignatureDialog from "../components/SignatureDialog.vue";
 import SignatureViewDialog from "../components/SignatureViewDialog.vue";
 import CameraScanView from "../components/CameraScanView.vue";
+import PhotoCaptureView from "../components/PhotoCaptureView.vue";
+import PhotoViewDialog from "../components/PhotoViewDialog.vue";
 import ReasonsDialog from "../components/ReasonsDialog.vue";
 import { t } from "../i18n/index.js";
 import * as service from "../services/deliveryService.js";
-import { ScanOutcome } from "../services/deliveryService.js";
+import { ScanOutcome, canPhotographPackage } from "../services/deliveryService.js";
 import { getPackageRejectReasons, getUnscannedPackageRejectReasons } from "../config/rejectReasons.js";
 import { manualScanner } from "../platform/scanner.js";
 import { isCameraScanAvailable, ensureCameraPermission, openAppSettings } from "../platform/cameraScanner.js";
@@ -54,11 +56,13 @@ const {
 const feedback = ref(null);        // { tone, icon, text }
 const lastPackageId = ref(null);
 
-const step = ref(null);            // null | "signature" | "reasons" | "signatures"
+const step = ref(null);            // null | "signature" | "reasons" | "signatures" | "photo" | "photos"
 const busy = ref(false);
 const reasonsPackageId = ref(null);
 const reasonsForScanned = ref(true); // collo già scaricato (con "scansione errata") o no (con "mancante")
 const signatures = ref([]);
+const photoPackage = ref(null);    // collo che si sta fotografando
+const photos = ref([]);            // foto mostrate da "Foto"
 
 // Lettura con la fotocamera (solo app nativa con fotocamera)
 const cameraAvailable = ref(false);
@@ -79,7 +83,8 @@ const signingSummary = computed(() => {
         tone: "success"
     }];
     s.packages.filter((p) => p.rejected).forEach((p) => lines.push({
-        text: t("signature.summaryRejectedPackage", { id: p.packageId, reasons: reasonLabels(p.rejectReasons) }),
+        text: t("signature.summaryRejectedPackage", { id: p.packageId, reasons: reasonLabels(p.rejectReasons) }) +
+            (p.photoCount ? " · " + t("photo.count", { count: p.photoCount }) : ""),
         tone: "danger"
     }));
     return {
@@ -329,6 +334,88 @@ async function onSignature(consignee) {
     await load();
 }
 
+// --- Foto del collo rifiutato ---
+
+function canPhoto(p) {
+    return isOpen.value && canPhotographPackage(p);
+}
+
+function openPhoto(p) {
+    if (!canPhoto(p) || step.value || cameraOn.value) {
+        return;
+    }
+    photoPackage.value = p;
+    step.value = "photo";
+}
+
+async function onPhotoSave(photo) {
+    const p = photoPackage.value;
+    busy.value = true;
+    try {
+        await service.addPackagePhoto(props.shipmentId, props.deliveryId, p.packageId, photo);
+    } catch (err) {
+        busy.value = false;
+        await showError(t("photo.saveFailed"), err);
+        return;
+    }
+    busy.value = false;
+    lastPackageId.value = p.packageId;
+    setFeedback("success", "camera", t("delivery.feedback.photoSaved", { id: p.packageId }));
+    closePhoto();
+    await load();
+}
+
+function closePhoto() {
+    photoPackage.value = null;
+    step.value = null;
+}
+
+async function onPhotoError(err) {
+    closePhoto();
+    if (err && err.kind === "permission") {
+        await askCameraPermission();
+    } else {
+        await showError(t("camera.errorTitle"), err);
+    }
+}
+
+async function showPhotos() {
+    photos.value = await service.getPhotos(props.shipmentId, props.deliveryId);
+    step.value = "photos";
+}
+
+// Solo a consegna aperta (la galleria mostra il pulsante solo allora).
+async function onRemovePhoto(item) {
+    const choice = await ask({
+        title: t("photo.removeTitle"),
+        message: t("photo.removeMessage", { id: item.packageId }),
+        tone: "warning",
+        actions: [
+            { id: "remove", label: t("photo.remove"), danger: true },
+            { id: "cancel", label: t("app.cancel"), primary: true }
+        ]
+    });
+    if (choice !== "remove") {
+        return;
+    }
+    busy.value = true;
+    try {
+        await service.removePackagePhoto(props.shipmentId, props.deliveryId, item.eventId);
+    } catch (err) {
+        busy.value = false;
+        await showError(t("photo.removeFailed"), err);
+        return;
+    }
+    busy.value = false;
+    lastPackageId.value = item.packageId;
+    setFeedback("neutral", "x", t("delivery.feedback.photoRemoved", { id: item.packageId }));
+    photos.value = await service.getPhotos(props.shipmentId, props.deliveryId);
+    await load();
+    if (photos.value.length === 0) {
+        closeStep();   // galleria vuota: si torna alla consegna
+    }
+}
+
 async function showSignatures() {
     signatures.value = await service.getSignatures(props.shipmentId, props.deliveryId);
     step.value = "signatures";
@@ -354,23 +441,28 @@ function packageView(p) {
 async function openCamera() {
     const allowed = await ensureCameraPermission().catch(() => false);
     if (!allowed) {
-        const choice = await ask({
-            title: t("camera.permissionTitle"),
-            message: t("camera.permissionMessage"),
-            tone: "warning",
-            actions: [
-                { id: "settings", label: t("camera.openSettings") },
-                { id: "ok", label: t("app.close"), primary: true }
-            ]
-        });
-        if (choice === "settings") {
-            openAppSettings();
-        }
-        focusScan();
+        await askCameraPermission();
         return;
     }
     feedback.value = null;   // la schermata di lettura parte da "Pronto a leggere"
     cameraOn.value = true;
+}
+
+/** Permesso della fotocamera negato: spiega e propone le impostazioni. */
+async function askCameraPermission() {
+    const choice = await ask({
+        title: t("camera.permissionTitle"),
+        message: t("camera.permissionMessage"),
+        tone: "warning",
+        actions: [
+            { id: "settings", label: t("camera.openSettings") },
+            { id: "ok", label: t("app.close"), primary: true }
+        ]
+    });
+    if (choice === "settings") {
+        openAppSettings();
+    }
+    focusScan();
 }
 
 function closeCamera() {
@@ -492,7 +584,7 @@ watch(step, (value) => {
                                 @mousedown.prevent
                                 @click="openCamera"
                             >
-                                <Icon name="camera" :size="22" />
+                                <Icon name="scan" :size="22" />
                             </button>
                             <button
                                 type="button"
@@ -536,24 +628,42 @@ watch(step, (value) => {
                     class="pkg"
                     :class="{ 'is-scanned': p.scanned, 'is-rejected': p.rejected, 'is-last': p.packageId === lastPackageId }"
                 >
-                    <button type="button" class="pkg__main" :disabled="!isOpen" @click="onPackageTap(p)">
-                        <span class="pkg__box" :class="'pkg__box--' + packageView(p).tone" aria-hidden="true">
-                            <Icon v-if="packageView(p).icon" :name="packageView(p).icon" :size="24" />
-                        </span>
-                        <span class="pkg__body">
-                            <span class="pkg__id"><CodeText :text="p.packageId" /></span>
-                            <span class="pkg__desc">{{ p.description }}</span>
-                            <span class="pkg__status" :class="p.rejected ? 'text-danger' : 'visually-hidden'">{{ packageView(p).label }}</span>
-                        </span>
-                    </button>
+                    <div class="pkg__row">
+                        <button type="button" class="pkg__main" :disabled="!isOpen" @click="onPackageTap(p)">
+                            <span class="pkg__box" :class="'pkg__box--' + packageView(p).tone" aria-hidden="true">
+                                <Icon v-if="packageView(p).icon" :name="packageView(p).icon" :size="24" />
+                            </span>
+                            <span class="pkg__body">
+                                <span class="pkg__id"><CodeText :text="p.packageId" /></span>
+                                <span class="pkg__desc">{{ p.description }}</span>
+                                <span class="pkg__status" :class="p.rejected ? 'text-danger' : 'visually-hidden'">{{ packageView(p).label }}</span>
+                            </span>
+                        </button>
+                        <!-- Foto del collo rifiutato, a documentazione del rifiuto -->
+                        <button
+                            v-if="canPhoto(p)"
+                            type="button"
+                            class="pkg__photo"
+                            :aria-label="t('photo.take', { id: p.packageId })"
+                            @click="openPhoto(p)"
+                        >
+                            <Icon name="camera" :size="24" />
+                            <span v-if="p.photoCount" class="pkg__photo-count">{{ p.photoCount }}</span>
+                        </button>
+                    </div>
                 </li>
             </ul>
         </template>
     </main>
 
     <!-- Azioni -->
-    <footer v-if="state && (state.isSigned || !state.isClosed)" class="action-bar">
+    <footer v-if="state && (state.isSigned || !state.isClosed || state.photoCount > 0)" class="action-bar">
         <div class="action-bar__inner">
+            <button v-if="state.photoCount > 0" type="button" class="btn btn-lg action-bar__photos" @click="showPhotos">
+                <Icon name="camera" />
+                <span class="num">{{ state.photoCount }}</span>
+                <span class="visually-hidden">{{ t('photo.show') }}</span>
+            </button>
             <button v-if="state.isSigned" type="button" class="btn btn-lg" @click="showSignatures">
                 {{ t('delivery.showSignatures') }}
             </button>
@@ -588,6 +698,24 @@ watch(step, (value) => {
         v-if="step === 'signatures'"
         :signatures="signatures"
         @close="closeStep"
+    />
+    <PhotoCaptureView
+        v-if="step === 'photo' && photoPackage"
+        :package-id="photoPackage.packageId"
+        :purpose="t('photo.purpose', { reasons: reasonLabels(photoPackage.rejectReasons) })"
+        :busy="busy"
+        @save="onPhotoSave"
+        @close="closePhoto"
+        @error="onPhotoError"
+    />
+    <PhotoViewDialog
+        v-if="step === 'photos'"
+        :photos="photos"
+        :packages="state ? state.packages : []"
+        :editable="Boolean(isOpen)"
+        :busy="busy"
+        @close="closeStep"
+        @remove="onRemovePhoto"
     />
     <CameraScanView
         v-if="cameraOn && state && isOpen"
@@ -701,7 +829,58 @@ watch(step, (value) => {
 }
 
 /* L'ultimo collo letto o toccato è incorniciato */
-.pkg.is-last .pkg__main {
+.pkg__row {
+    display: flex;
+    align-items: stretch;
+}
+
+.pkg__row .pkg__main {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Pulsante foto a destra della riga, separato da un filetto */
+.pkg__photo {
+    position: relative;
+    flex: none;
+    width: 64px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-left: 1px solid var(--hair);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+}
+
+.pkg__photo:active {
+    background: var(--sheet-2);
+}
+
+/* Quante foto ha già il collo */
+.pkg__photo-count {
+    position: absolute;
+    top: 10px;
+    right: 8px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    display: grid;
+    place-items: center;
+    background: var(--ink);
+    color: var(--sheet);
+    font-family: var(--font-cond);
+    font-weight: 700;
+    font-size: 0.8125rem;
+    line-height: 1;
+}
+
+.action-bar__photos {
+    flex: 0 0 auto !important;
+    padding: 0 16px;
+}
+
+.pkg.is-last .pkg__row {
     box-shadow: inset 0 0 0 3px var(--ink);
 }
 

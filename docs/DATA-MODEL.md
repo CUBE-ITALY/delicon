@@ -69,6 +69,8 @@ Ogni azione dell'operatore diventa un evento **append-only**. Lo stato si ricost
 | `PACKAGE_SCANNED` | `packageId`, `scannedCode` | `SCAN` + `venum` (`scannedCode` non esiste nel PoC) |
 | `PACKAGE_SCAN_CANCELLED` | `packageId` | `CANCEL_SCAN` + `venum` |
 | `PACKAGE_REJECTED` | `packageId`, `reasons[]` | `REJECT_PACKAGE` + `venum`, `reasons` |
+| `PACKAGE_PHOTO_TAKEN` | `packageId`, `photo` | — (non esiste nel PoC; in SAP sarebbe un allegato, es. GOS, da definire) |
+| `PACKAGE_PHOTO_REMOVED` | `packageId`, `photoEventId` | — (resta sul dispositivo: vedi sotto) |
 | `DELIVERY_CONFIRMED` | — | `CONFIRM` |
 | `DELIVERY_REJECTED` | `reasons[]` | `REJECT_DELIVERY_TOTAL` + `reasons` |
 | `DELIVERY_SIGNED` | `signerRole`, `signerName` (opz.), `signature` | `SIGN` + `signerRole`, `firma` (`signerName` non esiste nel PoC) |
@@ -85,6 +87,17 @@ Ogni azione dell'operatore diventa un evento **append-only**. Lo stato si ricost
 Nel modello canonico `signerRole` è **sempre esplicito**, anche per la firma della conferma. `signerName` (nome di chi firma, facoltativo) è assente se non indicato.
 
 L'immagine è salvata a 1 px per px logico dell'area di firma (circa 330×220 px su un palmare), non alla risoluzione fisica dello schermo: pesa pochi KB.
+
+### Foto del collo
+
+`PACKAGE_PHOTO_TAKEN` documenta un collo **rifiutato** (non uno rifiutato come mancante): è una prova, non cambia lo stato del collo. Un collo può averne più di una.
+
+Finché la consegna è aperta una foto si può eliminare: l'outbox resta append-only e l'eliminazione è l'evento `PACKAGE_PHOTO_REMOVED` (`photoEventId` = `eventId` della foto). Al momento dell'invio la foto eliminata e la sua eliminazione **non partono**: vengono segnate come concluse sul dispositivo, così il backend non riceve immagini scartate dall'operatore. Dopo la conferma le foto non si eliminano più.
+
+| Campo | Contenuto |
+|---|---|
+| `photo.image` | data-URL JPEG base64: esattamente il riquadro inquadrato, lato lungo al massimo 1280 px, qualità 0,75 (circa 100–250 KB) |
+| `photo.width` / `photo.height` | Dimensioni in pixel |
 
 ### Busta di invio
 

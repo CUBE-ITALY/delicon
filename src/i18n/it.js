@@ -93,7 +93,9 @@ export default {
             closed: "Consegna chiusa: lettura non registrata",
             cancelled: "Scarico del collo {id} annullato",
             rejected: "Collo {id} rifiutato",
-            restored: "Rifiuto del collo {id} annullato: torna da scaricare"
+            restored: "Rifiuto del collo {id} annullato: torna da scaricare",
+            photoSaved: "Foto del collo {id} salvata",
+            photoRemoved: "Foto del collo {id} eliminata"
         },
         saveFailed: "Registrazione non riuscita."
     },
@@ -101,6 +103,7 @@ export default {
     camera: {
         open: "Leggi con la fotocamera",
         title: "Inquadra il collo",
+        starting: "Avvio della fotocamera…",
         hint: "Porta il codice a barre dentro il riquadro: si legge da solo.",
         ready: "Pronto a leggere",
         done: "Fine",
@@ -110,6 +113,25 @@ export default {
         permissionMessage: "Per leggere i codici con la fotocamera consenti a Delicon l'accesso alla fotocamera nelle impostazioni dell'app.",
         openSettings: "Apri impostazioni",
         errorTitle: "Fotocamera non disponibile"
+    },
+
+    photo: {
+        take: "Fotografa il collo {id}",
+        title: "Foto del collo",
+        tag: "Foto",
+        purpose: "A documentazione del rifiuto: {reasons}. Inquadra il collo nel riquadro.",
+        shoot: "Scatta",
+        retake: "Rifai",
+        use: "Usa la foto",
+        show: "Foto",
+        viewTitle: "Foto dei colli",
+        none: "Nessuna foto per questa consegna.",
+        count: "{count} foto",
+        saveFailed: "Salvataggio della foto non riuscito.",
+        remove: "Elimina foto",
+        removeTitle: "Eliminare la foto?",
+        removeMessage: "La foto del collo {id} verrà eliminata e non sarà inviata.",
+        removeFailed: "Eliminazione della foto non riuscita."
     },
 
     reasons: {
@@ -152,6 +174,8 @@ export default {
         PACKAGE_SCANNED: "Collo {id} scaricato",
         PACKAGE_SCAN_CANCELLED: "Collo {id}: scarico annullato",
         PACKAGE_REJECTED: "Collo {id} rifiutato: {reasons}",
+        PACKAGE_PHOTO_TAKEN: "Foto del collo {id}",
+        PACKAGE_PHOTO_REMOVED: "Foto del collo {id} eliminata",
         DELIVERY_CONFIRMED: "Consegna confermata",
         DELIVERY_SIGNED: "Firma acquisita ({role})",
         DELIVERY_REJECTED: "Consegna rifiutata: {reasons}",

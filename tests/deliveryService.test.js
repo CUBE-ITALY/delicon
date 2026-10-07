@@ -173,3 +173,86 @@ describe("outbox", () => {
         expect(events.map((e) => e.eventId)).toEqual(["dup"]);
     });
 });
+
+describe("foto dei colli rifiutati", () => {
+    const PHOTO = { image: "data:image/jpeg;base64,/9j/AAAA", width: 1280, height: 960 };
+
+    it("un collo rifiutato si può fotografare: la foto è un evento e non ne cambia lo stato", async () => {
+        await service.downloadShipment(DEMO);
+        await scanAll("0002", ["000000013190"]);
+        await service.rejectPackage(DEMO, "0002", "000000013190", ["WET"]);
+        await service.addPackagePhoto(DEMO, "0002", "000000013190", PHOTO);
+        await service.addPackagePhoto(DEMO, "0002", "000000013190", PHOTO);
+
+        const d = await service.loadDelivery(DEMO, "0002");
+        expect(d.packages[0]).toMatchObject({ rejected: true, rejectReasons: ["WET"], photoCount: 2 });
+        expect(d.photoCount).toBe(2);
+
+        const photos = await service.getPhotos(DEMO, "0002");
+        expect(photos).toHaveLength(2);
+        expect(photos[0]).toMatchObject({ packageId: "000000013190", photo: PHOTO });
+        expect((await service.getTrace(DEMO, "0002")).map((e) => e.type)).toContain(EventType.PACKAGE_PHOTO_TAKEN);
+    });
+
+    it("niente foto per colli non rifiutati o rifiutati come mancanti", async () => {
+        await service.downloadShipment(DEMO);
+        await scanAll("0002", ["000000013190"]);
+        await expect(service.addPackagePhoto(DEMO, "0002", "000000013190", PHOTO))
+            .rejects.toMatchObject({ code: "PHOTO_NOT_ALLOWED" });
+        await service.rejectPackage(DEMO, "0002", "000000013192", [MISSING_CODE]);
+        await expect(service.addPackagePhoto(DEMO, "0002", "000000013192", PHOTO))
+            .rejects.toMatchObject({ code: "PHOTO_NOT_ALLOWED" });
+        expect(service.canPhotographPackage({ rejected: true, rejectReasons: [MISSING_CODE] })).toBe(false);
+        expect(service.canPhotographPackage({ rejected: true, rejectReasons: ["DAMAGED"] })).toBe(true);
+    });
+
+    it("niente foto non valide o su consegna chiusa", async () => {
+        await service.downloadShipment(DEMO);
+        await scanAll("0002", ["000000013190", "000000013191"]);
+        await service.rejectPackage(DEMO, "0002", "000000013192", ["DAMAGED"]);
+        await expect(service.addPackagePhoto(DEMO, "0002", "000000013192", { image: "x" }))
+            .rejects.toMatchObject({ code: "INVALID_PHOTO" });
+        await service.confirmDelivery(DEMO, "0002", { signature: SIGNATURE });
+        await expect(service.addPackagePhoto(DEMO, "0002", "000000013192", PHOTO))
+            .rejects.toMatchObject({ code: "DELIVERY_CLOSED" });
+    });
+});
+
+describe("eliminazione delle foto", () => {
+    const PHOTO = { image: "data:image/jpeg;base64,/9j/AAAA", width: 1280, height: 960 };
+
+    async function photographed() {
+        await service.downloadShipment(DEMO);
+        await scanAll("0002", ["000000013190", "000000013191"]);
+        await service.rejectPackage(DEMO, "0002", "000000013192", ["DAMAGED"]);
+        await service.addPackagePhoto(DEMO, "0002", "000000013192", PHOTO);
+        await service.addPackagePhoto(DEMO, "0002", "000000013192", PHOTO);
+        return service.getPhotos(DEMO, "0002");
+    }
+
+    it("a consegna aperta la foto si elimina: sparisce dalla galleria e dai conteggi", async () => {
+        const [first, second] = await photographed();
+        await service.removePackagePhoto(DEMO, "0002", first.eventId);
+
+        const photos = await service.getPhotos(DEMO, "0002");
+        expect(photos.map((p) => p.eventId)).toEqual([second.eventId]);
+        const d = await service.loadDelivery(DEMO, "0002");
+        expect(d.packages[2].photoCount).toBe(1);
+        expect(d.photoCount).toBe(1);
+        expect((await service.getTrace(DEMO, "0002")).map((e) => e.type)).toContain(EventType.PACKAGE_PHOTO_REMOVED);
+    });
+
+    it("una foto già eliminata o inesistente → PHOTO_NOT_FOUND", async () => {
+        const [first] = await photographed();
+        await service.removePackagePhoto(DEMO, "0002", first.eventId);
+        await expect(service.removePackagePhoto(DEMO, "0002", first.eventId)).rejects.toMatchObject({ code: "PHOTO_NOT_FOUND" });
+        await expect(service.removePackagePhoto(DEMO, "0002", "nessuna")).rejects.toMatchObject({ code: "PHOTO_NOT_FOUND" });
+    });
+
+    it("dopo la conferma la foto non si elimina più", async () => {
+        const [first] = await photographed();
+        await service.confirmDelivery(DEMO, "0002", { signature: SIGNATURE });
+        await expect(service.removePackagePhoto(DEMO, "0002", first.eventId)).rejects.toMatchObject({ code: "DELIVERY_CLOSED" });
+        expect(await service.getPhotos(DEMO, "0002")).toHaveLength(2);
+    });
+});

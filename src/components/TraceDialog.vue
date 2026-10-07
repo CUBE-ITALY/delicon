@@ -20,6 +20,8 @@ const VIEW = {
     [EventType.PACKAGE_SCANNED]:        { icon: "check", tone: "success" },
     [EventType.PACKAGE_SCAN_CANCELLED]: { icon: "undo",  tone: "neutral" },
     [EventType.PACKAGE_REJECTED]:       { icon: "x",     tone: "danger" },
+    [EventType.PACKAGE_PHOTO_TAKEN]:    { icon: "camera", tone: "info" },
+    [EventType.PACKAGE_PHOTO_REMOVED]:  { icon: "x",      tone: "neutral" },
     [EventType.DELIVERY_CONFIRMED]:     { icon: "check", tone: "success" },
     [EventType.DELIVERY_SIGNED]:        { icon: "pen",   tone: "info" },
     [EventType.DELIVERY_REJECTED]:      { icon: "ban",   tone: "danger" }

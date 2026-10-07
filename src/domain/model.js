@@ -19,6 +19,8 @@ export const EventType = Object.freeze({
     PACKAGE_SCANNED:        "PACKAGE_SCANNED",
     PACKAGE_SCAN_CANCELLED: "PACKAGE_SCAN_CANCELLED",
     PACKAGE_REJECTED:       "PACKAGE_REJECTED",
+    PACKAGE_PHOTO_TAKEN:    "PACKAGE_PHOTO_TAKEN",   // foto del collo rifiutato (documentazione)
+    PACKAGE_PHOTO_REMOVED:  "PACKAGE_PHOTO_REMOVED", // foto eliminata prima della chiusura
     DELIVERY_CONFIRMED:     "DELIVERY_CONFIRMED",
     DELIVERY_REJECTED:      "DELIVERY_REJECTED",
     DELIVERY_SIGNED:        "DELIVERY_SIGNED"
@@ -131,6 +133,13 @@ export const EventSyncStatus = Object.freeze({
  */
 
 /**
+ * @typedef {object} PhotoData  Foto scattata sul device (es. collo rifiutato).
+ * @property {string} image   data-URL JPEG base64.
+ * @property {number} width   Larghezza in pixel.
+ * @property {number} height  Altezza in pixel.
+ */
+
+/**
  * @typedef {object} OutboxEvent  Evento append-only dell'outbox.
  * @property {string}          eventId      UUID, chiave di idempotenza: mai rigenerato.
  * @property {EventType}       type
@@ -143,6 +152,8 @@ export const EventSyncStatus = Object.freeze({
  * @property {SignerRole}      [signerRole] DELIVERY_SIGNED.
  * @property {string}          [signerName] DELIVERY_SIGNED, facoltativo: nome di chi firma.
  * @property {SignatureData}   [signature]  DELIVERY_SIGNED.
+ * @property {PhotoData}       [photo]      PACKAGE_PHOTO_TAKEN.
+ * @property {string}          [photoEventId] PACKAGE_PHOTO_REMOVED: eventId della foto eliminata.
  * @property {EventSyncStatus} syncStatus   Locale, rimosso prima dell'invio.
  * @property {string}          [syncMessage] Locale, messaggio d'errore del server.
  */

@@ -59,7 +59,7 @@ Se con DataWedge le letture non arrivano nel campo (succede su alcune versioni c
 
 ## Lettura con la fotocamera
 
-Su ogni dispositivo con fotocamera, Zebra compresi, il campo "Codice collo" ha l'icona della **fotocamera**. Si apre una schermata di lettura continua:
+Su ogni dispositivo con fotocamera, Zebra compresi, il campo "Codice collo" ha l'icona del **mirino con il codice a barre**. Si apre una schermata di lettura continua:
 
 - si inquadra il codice nel **riquadro con gli angoli gialli**: viene letto da solo, senza premere nulla;
 - valgono solo i codici **dentro il riquadro**, così non si legge per sbaglio un altro codice della stessa etichetta;
@@ -73,6 +73,19 @@ Il riconoscimento (Google ML Kit) è **dentro l'APK**: funziona senza rete e non
 Formati, tolleranza del riquadro e tempo di non-rilettura sono in `src/config/cameraScan.js`. Oggi si legge solo **Code 128**, il formato delle etichette dei colli (verificato su un'etichetta stampata, `000000013179`); se un cliente usa altri formati vanno aggiunti lì.
 
 **Peso dell'APK.** La libreria di riconoscimento porta l'APK di rilascio da circa 3 a circa 14 MB. La build di rilascio include solo i processori ARM (`arm64-v8a`, `armeabi-v7a`), cioè palmari e telefoni reali; quella di debug include anche x86 per gli emulatori e arriva a circa 27 MB.
+
+## Foto dei colli rifiutati
+
+Quando un collo è **rifiutato** (per esempio dopo una seconda lettura e la scelta del motivo), la sua riga mostra a destra l'icona della **fotocamera**. Non compare per i colli rifiutati come mancanti, che non c'è da fotografare.
+
+- La schermata di scatto ha un **riquadro grande 4:3** con l'etichetta "FOTO", diverso dal mirino stretto della lettura codici, e spiega lo scopo dello scatto con il motivo del rifiuto.
+- **Scatta** ferma l'immagine; **Rifai** torna all'anteprima, **Usa la foto** la salva. Viene salvato esattamente il riquadro, in JPEG (lato lungo max 1280 px, circa 100–250 KB).
+- Il numero sulla riga dice quante foto ha il collo; il pulsante con la fotocamera nella barra in basso le mostra tutte, anche a consegna chiusa, come le firme. Il riepilogo della firma indica le foto accanto al collo rifiutato.
+- Finché la consegna è aperta, nella galleria ogni foto ha **Elimina foto** (con conferma): la foto eliminata non viene inviata. Dopo la conferma della consegna la galleria è solo consultazione.
+- All'apertura la fotocamera può metterci un attimo: finché non arriva la prima immagine si vede "Avvio della fotocamera…" su fondo nero, mai il riquadro grigio predefinito di Android. Lo stesso vale per la lettura codici.
+- La foto è un evento dell'outbox (`PACKAGE_PHOTO_TAKEN`, vedi `docs/API.md`): resta sul dispositivo e parte verso il backend con gli altri esiti alla chiusura della consegna.
+
+La fotocamera per le foto è quella della pagina (`getUserMedia`), non il plugin di lettura codici, che non scatta foto: funziona senza rete e il permesso è lo stesso della lettura codici. Nel campo "Codice collo" la lettura con la fotocamera ha ora l'icona del mirino con il codice a barre, per non confonderla con la foto.
 
 ## Comportamento nativo
 

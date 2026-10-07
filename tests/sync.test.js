@@ -15,6 +15,59 @@ async function closeDelivery2() {
 }
 
 describe("sincronizzazione (mock)", () => {
+    it("una foto eliminata prima della chiusura non parte, e la consegna risulta inviata", async () => {
+        const { backend } = await import("../src/backend/index.js");
+        const sent = [];
+        const original = backend.submitEvents;
+        backend.submitEvents = async (shipmentId, events) => { sent.push(...events); return original.call(backend, shipmentId, events); };
+        try {
+            await service.downloadShipment(DEMO);
+            for (const id of ["000000013190", "000000013191", "000000013192"]) {
+                await service.scanPackage(DEMO, "0002", id);
+            }
+            await service.rejectPackage(DEMO, "0002", "000000013192", ["DAMAGED"]);
+            const photo = { image: "data:image/jpeg;base64,/9j/AAAA", width: 4, height: 3 };
+            await service.addPackagePhoto(DEMO, "0002", "000000013192", photo);
+            await service.addPackagePhoto(DEMO, "0002", "000000013192", photo);
+            const [discarded] = await service.getPhotos(DEMO, "0002");
+            await service.removePackagePhoto(DEMO, "0002", discarded.eventId);
+            await service.confirmDelivery(DEMO, "0002", { signature: SIGNATURE });
+
+            // 3 letture + rifiuto + 1 foto + conferma + firma; la foto eliminata e la sua eliminazione no
+            expect(await syncDelivery(DEMO, "0002")).toEqual({ submitted: 7, errored: 0 });
+            expect(sent.filter((e) => e.type === "PACKAGE_PHOTO_TAKEN")).toHaveLength(1);
+            expect(sent.some((e) => e.eventId === discarded.eventId || e.type === "PACKAGE_PHOTO_REMOVED")).toBe(false);
+            const d = await service.loadDelivery(DEMO, "0002");
+            expect(d.syncState).toBe(SyncState.SYNCED);
+            expect(await syncDelivery(DEMO, "0002")).toEqual({ submitted: 0, errored: 0 });
+        } finally {
+            backend.submitEvents = original;
+        }
+    });
+
+    it("la foto del collo rifiutato parte con gli altri esiti alla chiusura", async () => {
+        const { backend } = await import("../src/backend/index.js");
+        const sent = [];
+        const original = backend.submitEvents;
+        backend.submitEvents = async (shipmentId, events) => { sent.push(...events); return original.call(backend, shipmentId, events); };
+        try {
+            await service.downloadShipment(DEMO);
+            await service.scanPackage(DEMO, "0002", "000000013190");
+            await service.scanPackage(DEMO, "0002", "000000013191");
+            await service.scanPackage(DEMO, "0002", "000000013192");
+            await service.rejectPackage(DEMO, "0002", "000000013192", ["DAMAGED"]);
+            await service.addPackagePhoto(DEMO, "0002", "000000013192", { image: "data:image/jpeg;base64,/9j/AAAA", width: 4, height: 3 });
+            // Consegna aperta: non parte nulla
+            expect(await syncDelivery(DEMO, "0002")).toEqual({ submitted: 0, errored: 0 });
+            await service.confirmDelivery(DEMO, "0002", { signature: SIGNATURE });
+            expect(await syncDelivery(DEMO, "0002")).toEqual({ submitted: 7, errored: 0 });
+            const photo = sent.find((e) => e.type === "PACKAGE_PHOTO_TAKEN");
+            expect(photo).toMatchObject({ packageId: "000000013192", photo: { width: 4, height: 3 } });
+        } finally {
+            backend.submitEvents = original;
+        }
+    });
+
     it("online: la consegna chiusa diventa sincronizzata", async () => {
         await service.downloadShipment(DEMO);
         await closeDelivery2();

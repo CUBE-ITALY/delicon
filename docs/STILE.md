@@ -56,6 +56,7 @@ Per usare un peso nuovo bisogna aggiungerlo in `fonts.css`, altrimenti il browse
 | `.band` (base.css) | Esito di un'azione: fascia a colore pieno |
 | `.field` (base.css) | Campo con l'etichetta dentro la cella; `.field__row` + `.field__key` per il pulsante tastiera |
 | `ui/softKeyboard.js` | Tastiera a schermo su richiesta per i campi letti dallo scanner |
+| `components/PhotoCaptureView.vue` | Foto del collo rifiutato: riquadro grande 4:3 con etichetta "FOTO" (forma di un pacco, diverso dal mirino della lettura codici), scopo dello scatto, Scatta → Rifai / Usa la foto |
 | `components/CameraScanView.vue` | Lettura con la fotocamera: maschera scura, mirino con gli angoli gialli (il giallo indica dove agire), esito e conteggio in basso; "Fine" diventa giallo quando tutti i colli sono gestiti |
 
 ## Logo

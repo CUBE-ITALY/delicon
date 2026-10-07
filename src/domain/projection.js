@@ -23,6 +23,7 @@ import { EventType, DeliveryStatus, SyncState, EventSyncStatus } from "./model.j
  * @property {boolean}  scanned
  * @property {boolean}  rejected
  * @property {string[]} rejectReasons   Codici motivo se rifiutato, altrimenti [].
+ * @property {number}   photoCount      Foto del collo (PACKAGE_PHOTO_TAKEN non eliminate).
  */
 
 /**
@@ -37,6 +38,7 @@ import { EventType, DeliveryStatus, SyncState, EventSyncStatus } from "./model.j
  * @property {number}         scannedCount
  * @property {number}         rejectedCount
  * @property {number}         expectedCount
+ * @property {number}         photoCount     Foto dei colli della consegna.
  * @property {boolean}        isConfirmable  Ogni collo scaricato o rifiutato, almeno uno scaricato.
  * @property {boolean}        isClosed       Confermata OPPURE rifiutata: niente più lavoro.
  * @property {boolean}        isConfirmed    Evento DELIVERY_CONFIRMED presente.
@@ -71,6 +73,10 @@ export function buildDeliveryState(delivery, packages, events) {
     const sorted        = events.slice().sort(byOccurredAt);
     const packageStatus = new Map();   // packageId → "scanned" | "cancelled" | "rejected"
     const packageReasons = new Map();  // packageId → codici motivo dell'ultimo rifiuto
+    const packagePhotos = new Map();   // packageId → numero di foto (scattate e non eliminate)
+    const removedPhotos = new Set(sorted
+        .filter((e) => e.type === EventType.PACKAGE_PHOTO_REMOVED)
+        .map((e) => e.photoEventId));
 
     for (const event of sorted) {
         if (!event.packageId) {
@@ -83,6 +89,9 @@ export function buildDeliveryState(delivery, packages, events) {
         } else if (event.type === EventType.PACKAGE_REJECTED) {
             packageStatus.set(event.packageId, "rejected");
             packageReasons.set(event.packageId, event.reasons || []);
+        } else if (event.type === EventType.PACKAGE_PHOTO_TAKEN && !removedPhotos.has(event.eventId)) {
+            // La foto documenta il collo e non ne cambia lo stato.
+            packagePhotos.set(event.packageId, (packagePhotos.get(event.packageId) || 0) + 1);
         }
     }
 
@@ -97,13 +106,15 @@ export function buildDeliveryState(delivery, packages, events) {
             description:   pkg.description,
             scanned:       st === "scanned",
             rejected:      st === "rejected",
-            rejectReasons: st === "rejected" ? (packageReasons.get(pkg.packageId) || []) : []
+            rejectReasons: st === "rejected" ? (packageReasons.get(pkg.packageId) || []) : [],
+            photoCount:    packagePhotos.get(pkg.packageId) || 0
         };
     });
 
     // 3. Contatori.
     const scannedCount  = packageStates.filter((p) => p.scanned).length;
     const rejectedCount = packageStates.filter((p) => p.rejected).length;
+    const photoCount    = packageStates.reduce((n, p) => n + p.photoCount, 0);
     const expectedCount = delivery.expectedPackageCount;
     const isConfirmable = expectedCount > 0 &&
                           scannedCount > 0 &&
@@ -135,6 +146,7 @@ export function buildDeliveryState(delivery, packages, events) {
         scannedCount,
         rejectedCount,
         expectedCount,
+        photoCount,
         isConfirmable,
         isClosed,
         isConfirmed,

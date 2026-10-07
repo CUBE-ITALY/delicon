@@ -81,6 +81,9 @@ Accept: application/json
       "occurredAt": "2026-10-07T08:15:02.117Z", "packageId": "000000013190", "scannedCode": "000000013190" },
     { "eventId": "a93e…", "type": "PACKAGE_REJECTED", "shipmentId": "0000000873", "deliveryId": "0002",
       "occurredAt": "2026-10-07T08:15:40.002Z", "packageId": "000000013192", "reasons": ["WET"] },
+    { "eventId": "e71a…", "type": "PACKAGE_PHOTO_TAKEN", "shipmentId": "0000000873", "deliveryId": "0002",
+      "occurredAt": "2026-10-07T08:15:58.731Z", "packageId": "000000013192",
+      "photo": { "image": "data:image/jpeg;base64,/9j/4AAQ…", "width": 1280, "height": 960 } },
     { "eventId": "0b27…", "type": "DELIVERY_CONFIRMED", "shipmentId": "0000000873", "deliveryId": "0002",
       "occurredAt": "2026-10-07T08:16:10.410Z" },
     { "eventId": "c5d8…", "type": "DELIVERY_SIGNED", "shipmentId": "0000000873", "deliveryId": "0002",
@@ -122,6 +125,7 @@ Regole che riproducono lo stato mostrato dall'app (`src/domain/projection.js`):
 - **Collo** (`shipmentId` + `deliveryId` + `packageId`): vale l'ultimo evento per `occurredAt`. `PACKAGE_SCANNED` → scaricato, `PACKAGE_SCAN_CANCELLED` → da scaricare, `PACKAGE_REJECTED` → rifiutato con `reasons`.
 - **Consegna** (`shipmentId` + `deliveryId`): `DELIVERY_REJECTED` → rifiutata, indipendentemente dai colli. Altrimenti con `DELIVERY_CONFIRMED` → confermata, oppure **confermata con eccezioni** se nello stato finale c'è almeno un collo rifiutato.
 - **Firma** (`shipmentId` + `deliveryId` + `signerRole`): una per ruolo. `signature.image` è un data-URL PNG base64 da decodificare e archiviare.
+- **Foto del collo** (`eventId`): `PACKAGE_PHOTO_TAKEN` non cambia lo stato del collo; ogni evento è una foto da archiviare come allegato del collo (`photo.image`, data-URL JPEG base64). Un collo può averne più di una. Le foto eliminate dall'operatore prima della chiusura non vengono inviate, e nemmeno la loro eliminazione (`PACKAGE_PHOTO_REMOVED` resta sul dispositivo): il server riceve solo le foto valide.
 
 ## Punti aperti (TBD)
 
@@ -129,7 +133,7 @@ Regole che riproducono lo stato mostrato dall'app (`src/domain/projection.js`):
 |---|---|
 | **Autenticazione** | Le variabili `VITE_*` finiscono nel bundle: vanno bene per test e demo, **non** per segreti di produzione. Da definire: login per operatore (token a scadenza), credenziali per device (MDM), mTLS… |
 | **Identità dell'operatore** | Il palmare è identificato (`device`), l'operatore no: arriverà con l'autenticazione (`operatorId` nella busta) |
-| **Dimensione firma** | L'immagine è ridotta a 1× (pochi KB per firma). Resta da fissare un limite lato server sulla dimensione del batch |
+| **Dimensione del batch** | Firma ridotta a 1× (pochi KB); ogni foto di collo rifiutato circa 100–250 KB. Una consegna con più colli rifiutati e fotografati può superare il MB: da fissare il limite lato server, o prevedere l'invio delle foto a parte |
 | **CORS** | Nell'APK le chiamate partono dal layer nativo (CapacitorHttp): CORS non serve. Serve solo se l'app viene usata da browser |
 | **Elenco trasporti assegnati** | Oggi l'operatore digita o scansiona il numero. Un endpoint "trasporti dell'operatore" eviterebbe l'inserimento manuale |
 | **Catalogo motivi da backend** | Oggi il catalogo è nella configurazione dell'app; potrebbe essere scaricato insieme al trasporto |

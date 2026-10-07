@@ -29,6 +29,7 @@ defineProps({
 const emit = defineEmits(["code", "close", "error"]);
 
 const aim = ref(null);
+const starting = ref(true);        // fotocamera in avvio: caricamento al posto del mirino
 const torchAvailable = ref(false);
 const torchOn = ref(false);
 
@@ -50,6 +51,7 @@ onMounted(async () => {
             onError: (message) => emit("error", message),
             getAimRect: () => (aim.value ? aim.value.getBoundingClientRect() : null)
         });
+        starting.value = false;
         torchAvailable.value = await isTorchAvailable();
     } catch (err) {
         emit("error", (err && err.message) || String(err));
@@ -93,15 +95,19 @@ onBeforeUnmount(() => {
                 </button>
             </header>
 
-            <div class="camera__view">
-                <div ref="aim" class="camera__aim" aria-hidden="true">
+            <div class="camera__view" :class="{ 'is-starting': starting }">
+                <p v-if="starting" class="camera__starting" role="status">
+                    <span class="spinner" aria-hidden="true" />
+                    {{ t('camera.starting') }}
+                </p>
+                <div v-show="!starting" ref="aim" class="camera__aim" aria-hidden="true">
                     <span class="camera__corner camera__corner--tl" />
                     <span class="camera__corner camera__corner--tr" />
                     <span class="camera__corner camera__corner--bl" />
                     <span class="camera__corner camera__corner--br" />
                     <span class="camera__line" />
                 </div>
-                <p class="camera__hint">{{ t('camera.hint') }}</p>
+                <p v-show="!starting" class="camera__hint">{{ t('camera.hint') }}</p>
             </div>
 
             <footer class="camera__panel">
@@ -238,6 +244,19 @@ onBeforeUnmount(() => {
     height: 2px;
     background: var(--signal);
     opacity: 0.7;
+}
+
+/* Fotocamera in avvio: fondo nero e caricamento, niente anteprima a metà */
+.camera__view.is-starting {
+    background: #000000;
+}
+
+.camera__starting {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #f2f3ee;
+    font-weight: 600;
 }
 
 .camera__hint {

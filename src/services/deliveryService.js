@@ -14,7 +14,7 @@ import {
     findPackageByCode, byOccurredAt
 } from "../domain/projection.js";
 import { EventType, SignerRole } from "../domain/model.js";
-import { WRONG_SCAN_CODE } from "../config/rejectReasons.js";
+import { WRONG_SCAN_CODE, MISSING_CODE } from "../config/rejectReasons.js";
 
 /** Esiti di una scansione. */
 export const ScanOutcome = Object.freeze({
@@ -195,6 +195,73 @@ export async function rejectPackage(shipmentId, deliveryId, packageId, reasons) 
  * @property {import("../domain/model.js").SignatureData} signature
  * @property {string} [signerName]  Nome di chi firma, facoltativo.
  */
+
+/**
+ * Si può fotografare un collo rifiutato che è sul posto: non uno rifiutato
+ * come mancante, che non c'è da fotografare.
+ * @param {{rejected: boolean, rejectReasons: string[]}} pkg  stato del collo (Projection)
+ */
+export function canPhotographPackage(pkg) {
+    return Boolean(pkg && pkg.rejected && !(pkg.rejectReasons || []).includes(MISSING_CODE));
+}
+
+/**
+ * Foto di un collo rifiutato, a documentazione del rifiuto. Come le firme è
+ * un evento dell'outbox: resta sul dispositivo, si consulta nella consegna e
+ * parte verso il backend con gli altri esiti alla chiusura.
+ *
+ * @param {import("../domain/model.js").PhotoData} photo
+ */
+export async function addPackagePhoto(shipmentId, deliveryId, packageId, photo) {
+    if (!photo || typeof photo.image !== "string" || !photo.image.startsWith("data:image/")) {
+        throw _domainError("INVALID_PHOTO", "Foto non valida");
+    }
+    const state = await _requireOpenDelivery(shipmentId, deliveryId);
+    const pkg = _requirePackage(state, packageId);
+    if (!canPhotographPackage(pkg)) {
+        throw _domainError("PHOTO_NOT_ALLOWED", `Il collo ${packageId} non è rifiutato: niente foto da allegare`);
+    }
+    await db.appendEvent(_event(EventType.PACKAGE_PHOTO_TAKEN, shipmentId, deliveryId, {
+        packageId,
+        photo: { image: photo.image, width: photo.width, height: photo.height }
+    }));
+}
+
+/**
+ * Elimina una foto, solo a consegna aperta. L'outbox resta append-only:
+ * l'eliminazione è un evento che annulla la foto (come l'annullo di uno
+ * scarico). Una foto eliminata prima della chiusura non viene inviata (sync.js).
+ *
+ * @param {string} photoEventId  eventId della foto (da getPhotos)
+ */
+export async function removePackagePhoto(shipmentId, deliveryId, photoEventId) {
+    await _requireOpenDelivery(shipmentId, deliveryId);
+    const photo = (await getPhotos(shipmentId, deliveryId)).find((p) => p.eventId === photoEventId);
+    if (!photo) {
+        throw _domainError("PHOTO_NOT_FOUND", "Foto non trovata o già eliminata");
+    }
+    await db.appendEvent(_event(EventType.PACKAGE_PHOTO_REMOVED, shipmentId, deliveryId, {
+        packageId: photo.packageId,
+        photoEventId
+    }));
+}
+
+/** Foto dei colli della consegna (non eliminate), dalla più vecchia. */
+export async function getPhotos(shipmentId, deliveryId) {
+    const events = await db.getEventsByDelivery(shipmentId, deliveryId);
+    const removed = new Set(events
+        .filter((e) => e.type === EventType.PACKAGE_PHOTO_REMOVED)
+        .map((e) => e.photoEventId));
+    return events
+        .filter((e) => e.type === EventType.PACKAGE_PHOTO_TAKEN && e.photo && !removed.has(e.eventId))
+        .sort(byOccurredAt)
+        .map((e) => ({
+            eventId:    e.eventId,
+            packageId:  e.packageId,
+            photo:      e.photo,
+            occurredAt: e.occurredAt
+        }));
+}
 
 function _signedEvent(shipmentId, deliveryId, signerRole, { signature, signerName }) {
     const extra = { signerRole, signature };

@@ -12,7 +12,7 @@
 
 import * as db from "../data/db.js";
 import { backend } from "../backend/index.js";
-import { CLOSING_EVENT_TYPES, EventSyncStatus } from "../domain/model.js";
+import { CLOSING_EVENT_TYPES, EventSyncStatus, EventType } from "../domain/model.js";
 import { byOccurredAt } from "../domain/projection.js";
 
 function _isClosed(events) {
@@ -27,6 +27,24 @@ function _isClosed(events) {
  *   submitted = 0 se non c'era niente da inviare.
  *   Rigetta SOLO per errore di rete/temporaneo: gli eventi restano in attesa.
  */
+/**
+ * Foto eliminate prima di essere inviate: la foto e la sua eliminazione non
+ * partono (il backend non riceve immagini che l'operatore ha scartato) e
+ * vengono segnate come concluse in locale.
+ * @returns {Set<string>} eventId da non inviare
+ */
+function _discardedPhotoEvents(unsynced) {
+    const pending = new Set(unsynced.map((e) => e.eventId));
+    const discarded = new Set();
+    unsynced
+        .filter((e) => e.type === EventType.PACKAGE_PHOTO_REMOVED && pending.has(e.photoEventId))
+        .forEach((e) => {
+            discarded.add(e.eventId);
+            discarded.add(e.photoEventId);
+        });
+    return discarded;
+}
+
 export async function syncDelivery(shipmentId, deliveryId) {
     const events = await db.getEventsByDelivery(shipmentId, deliveryId);
     const unsynced = events
@@ -37,7 +55,16 @@ export async function syncDelivery(shipmentId, deliveryId) {
         return { submitted: 0, errored: 0 };
     }
 
-    const { results } = await backend.submitEvents(shipmentId, unsynced);
+    const discarded = _discardedPhotoEvents(unsynced);
+    if (discarded.size > 0) {
+        await db.updateEventsSyncStatus([...discarded].map((eventId) => ({ eventId, status: EventSyncStatus.SYNCED })));
+    }
+    const toSend = unsynced.filter((e) => !discarded.has(e.eventId));
+    if (toSend.length === 0) {
+        return { submitted: 0, errored: 0 };
+    }
+
+    const { results } = await backend.submitEvents(shipmentId, toSend);
     await db.updateEventsSyncStatus(results);
     return {
         submitted: results.length,
