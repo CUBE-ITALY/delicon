@@ -98,6 +98,20 @@ export default {
         saveFailed: "Registrazione non riuscita."
     },
 
+    camera: {
+        open: "Leggi con la fotocamera",
+        title: "Inquadra il collo",
+        hint: "Porta il codice a barre dentro il riquadro: si legge da solo.",
+        ready: "Pronto a leggere",
+        done: "Fine",
+        torchOn: "Accendi la torcia",
+        torchOff: "Spegni la torcia",
+        permissionTitle: "Fotocamera non autorizzata",
+        permissionMessage: "Per leggere i codici con la fotocamera consenti a Delicon l'accesso alla fotocamera nelle impostazioni dell'app.",
+        openSettings: "Apri impostazioni",
+        errorTitle: "Fotocamera non disponibile"
+    },
+
     reasons: {
         selectAtLeastOne: "Seleziona almeno un motivo.",
         confirm: "Conferma"

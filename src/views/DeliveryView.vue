@@ -16,12 +16,14 @@ import CodeText from "../ui/CodeText.vue";
 import Tally from "../ui/Tally.vue";
 import SignatureDialog from "../components/SignatureDialog.vue";
 import SignatureViewDialog from "../components/SignatureViewDialog.vue";
+import CameraScanView from "../components/CameraScanView.vue";
 import ReasonsDialog from "../components/ReasonsDialog.vue";
 import { t } from "../i18n/index.js";
 import * as service from "../services/deliveryService.js";
 import { ScanOutcome } from "../services/deliveryService.js";
 import { getPackageRejectReasons, getUnscannedPackageRejectReasons } from "../config/rejectReasons.js";
 import { manualScanner } from "../platform/scanner.js";
+import { isCameraScanAvailable, ensureCameraPermission, openAppSettings } from "../platform/cameraScanner.js";
 import { initAudio, playSound } from "../platform/audioFeedback.js";
 import { syncVersion } from "../app/outbox.js";
 import { syncAfterClosing } from "../app/deliveryFeedback.js";
@@ -57,6 +59,10 @@ const busy = ref(false);
 const reasonsPackageId = ref(null);
 const reasonsForScanned = ref(true); // collo già scaricato (con "scansione errata") o no (con "mancante")
 const signatures = ref([]);
+
+// Lettura con la fotocamera (solo app nativa con fotocamera)
+const cameraAvailable = ref(false);
+const cameraOn = ref(false);
 
 const isOpen = computed(() => state.value && !state.value.isClosed);
 
@@ -171,6 +177,9 @@ async function handleCode(code) {
             playSound("alreadyScanned");
             lastPackageId.value = res.packageId;
             setFeedback("warning", "alert", t("delivery.feedback.alreadyScanned", { id: res.packageId }));
+            if (cameraOn.value) {
+                break; // con la fotocamera si continua a leggere: basta l'avviso, niente finestra
+            }
             const choice = await ask({
                 title: t("delivery.alreadyScannedTitle", { id: res.packageId }),
                 message: t("delivery.alreadyScannedMessage"),
@@ -210,7 +219,7 @@ function openReasons(packageId, scanned) {
  *   - rifiutato    → annullare il rifiuto, il collo torna da scaricare.
  */
 async function onPackageTap(p) {
-    if (!isOpen.value || step.value) {
+    if (!isOpen.value || step.value || cameraOn.value) {
         return;
     }
     if (p.rejected) {
@@ -340,11 +349,52 @@ function packageView(p) {
     return { tone: "neutral", icon: "", label: t("delivery.packageToScan") };
 }
 
+// --- Fotocamera ---
+
+async function openCamera() {
+    const allowed = await ensureCameraPermission().catch(() => false);
+    if (!allowed) {
+        const choice = await ask({
+            title: t("camera.permissionTitle"),
+            message: t("camera.permissionMessage"),
+            tone: "warning",
+            actions: [
+                { id: "settings", label: t("camera.openSettings") },
+                { id: "ok", label: t("app.close"), primary: true }
+            ]
+        });
+        if (choice === "settings") {
+            openAppSettings();
+        }
+        focusScan();
+        return;
+    }
+    feedback.value = null;   // la schermata di lettura parte da "Pronto a leggere"
+    cameraOn.value = true;
+}
+
+function closeCamera() {
+    cameraOn.value = false;
+    focusScan();
+}
+
+async function onCameraError(message) {
+    cameraOn.value = false;
+    await showError(t("camera.errorTitle"), message);
+    focusScan();
+}
+
+// Il codice letto dalla fotocamera segue lo stesso percorso dello scanner del palmare.
+function onCameraCode(code) {
+    manualScanner.submitCode(code);
+}
+
 onMounted(async () => {
     initAudio();
     manualScanner.attach(onCode);
     await load();
     focusScan();
+    cameraAvailable.value = await isCameraScanAvailable();
 });
 
 onBeforeUnmount(() => manualScanner.detach());
@@ -433,6 +483,17 @@ watch(step, (value) => {
                                 :placeholder="t('delivery.scanPlaceholder')"
                                 @blur="onScanBlur"
                             >
+                            <button
+                                v-if="cameraAvailable"
+                                type="button"
+                                class="field__key field__key--strong"
+                                :aria-label="t('camera.open')"
+                                @pointerdown.prevent
+                                @mousedown.prevent
+                                @click="openCamera"
+                            >
+                                <Icon name="camera" :size="22" />
+                            </button>
                             <button
                                 type="button"
                                 class="field__key"
@@ -527,6 +588,18 @@ watch(step, (value) => {
         v-if="step === 'signatures'"
         :signatures="signatures"
         @close="closeStep"
+    />
+    <CameraScanView
+        v-if="cameraOn && state && isOpen"
+        :subtitle="t('delivery.title', { id: deliveryId })"
+        :scanned="state.scannedCount"
+        :expected="state.expectedCount"
+        :tones="packageTones"
+        :feedback="feedback"
+        :complete="state.isConfirmable"
+        @code="onCameraCode"
+        @close="closeCamera"
+        @error="onCameraError"
     />
 </template>
 

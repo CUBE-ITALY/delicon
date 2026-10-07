@@ -45,6 +45,12 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // Solo processori ARM (palmari e telefoni reali): la libreria nativa
+            // di lettura codici (ML Kit) per x86/x86_64 serve agli emulatori e
+            // pesa circa 11 MB. La build di debug le tiene tutte.
+            ndk {
+                abiFilters 'arm64-v8a', 'armeabi-v7a'
+            }
             if (keystorePropertiesFile.exists()) {
                 signingConfig signingConfigs.release
             }

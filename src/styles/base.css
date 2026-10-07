@@ -359,6 +359,11 @@ button, input {
     background: var(--sheet-2);
 }
 
+/* Variante sempre ben visibile (es. fotocamera: su un telefono è il modo principale di leggere) */
+.field__key--strong {
+    color: var(--ink);
+}
+
 .input {
     display: block;
     width: 100%;
@@ -410,6 +415,22 @@ button, input {
 .text-danger  { color: var(--ko); }
 .text-warning { color: var(--warn-ink); }
 .text-neutral { color: var(--ink-2); }
+
+/* --- Lettura con fotocamera ---
+   La fotocamera è disegnata dietro la pagina: durante la lettura la pagina
+   diventa trasparente e l'app sotto invisibile (resta solo la schermata di
+   lettura, fuori da #app). Opacità e non visibility: il campo del codice
+   resta a fuoco e lo scanner del palmare continua a funzionare. */
+
+html.camera-active,
+html.camera-active body {
+    background: transparent;
+}
+
+html.camera-active #app {
+    opacity: 0;
+    pointer-events: none;
+}
 
 /* --- Spinner: quadrato che ruota --- */
 

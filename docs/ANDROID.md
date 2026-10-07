@@ -57,6 +57,23 @@ Prova: nella schermata di una consegna il campo "Codice collo" è già attivo, q
 
 Se con DataWedge le letture non arrivano nel campo (succede su alcune versioni con certe impostazioni), prova ad attivare nelle impostazioni dell'uscita tastiera l'opzione **Send Characters as Events** ("invia caratteri come eventi").
 
+## Lettura con la fotocamera
+
+Su ogni dispositivo con fotocamera, Zebra compresi, il campo "Codice collo" ha l'icona della **fotocamera**. Si apre una schermata di lettura continua:
+
+- si inquadra il codice nel **riquadro con gli angoli gialli**: viene letto da solo, senza premere nulla;
+- valgono solo i codici **dentro il riquadro**, così non si legge per sbaglio un altro codice della stessa etichetta;
+- lo stesso codice **non viene riletto** finché resta inquadrato (si riaccetta dopo 2,5 s fuori vista);
+- l'esito di ogni lettura (scaricato, già letto, estraneo) compare in basso, con il conteggio dei colli; "già scaricato" è solo un avviso e non apre finestre;
+- **Fine** torna alla consegna e diventa giallo quando tutti i colli sono gestiti; anche il tasto indietro chiude la lettura;
+- la **torcia** è in alto a destra, se il dispositivo ce l'ha.
+
+Il riconoscimento (Google ML Kit) è **dentro l'APK**: funziona senza rete e non scarica nulla. Il permesso della fotocamera viene chiesto al primo uso; se è stato negato, l'app spiega come attivarlo dalle impostazioni.
+
+Formati, tolleranza del riquadro e tempo di non-rilettura sono in `src/config/cameraScan.js`. Oggi si legge solo **Code 128**, il formato delle etichette dei colli (verificato su un'etichetta stampata, `000000013179`); se un cliente usa altri formati vanno aggiunti lì.
+
+**Peso dell'APK.** La libreria di riconoscimento porta l'APK di rilascio da circa 3 a circa 14 MB. La build di rilascio include solo i processori ARM (`arm64-v8a`, `armeabi-v7a`), cioè palmari e telefoni reali; quella di debug include anche x86 per gli emulatori e arriva a circa 27 MB.
+
 ## Comportamento nativo
 
 | | |
@@ -112,7 +129,7 @@ npm run android:sync
 cd android && ./gradlew assembleRelease     # Windows: gradlew.bat assembleRelease
 ```
 
-Il risultato è `android/app/build/outputs/apk/release/app-release.apk` (circa 3 MB). Senza `keystore.properties` la build di rilascio produce un APK **non firmato**, che non si può installare. In alternativa: Android Studio → *Build → Generate Signed App Bundle / APK*.
+Il risultato è `android/app/build/outputs/apk/release/app-release.apk` (circa 14 MB, di cui circa 8 per la lettura con la fotocamera). Senza `keystore.properties` la build di rilascio produce un APK **non firmato**, che non si può installare. In alternativa: Android Studio → *Build → Generate Signed App Bundle / APK*.
 
 ## Rete e certificati
 
